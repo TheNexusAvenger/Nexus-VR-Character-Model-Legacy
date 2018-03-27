@@ -10,7 +10,7 @@ Nexus VR Character Model, by TheNexusAvenger
 
 File: NexusVRCharacterModel/NexusVRCharacter/Replication/LocalPlayerHandler.module.lua
 Author: TheNexusAvenger
-Date: March 11th 2018
+Date: March 27th 2018
 
 
 
@@ -62,6 +62,15 @@ function LocalPlayerHandler:Initialize()
 	VRService.Changed:Connect(StartVR)
 	StartVR()
 	
+	--This solves bug with HTC Vives not starting.
+	--Stops after 10 seconds.
+	local StartTime = tick()
+	spawn(function()
+		while not Started and StartTime - tick() < 10  do
+			StartVR()
+			wait(0.1)
+		end
+	end)
 	RemoteHandler:Initialize()
 end
 

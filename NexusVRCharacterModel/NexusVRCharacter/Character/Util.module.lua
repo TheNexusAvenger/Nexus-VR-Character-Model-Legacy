@@ -10,7 +10,7 @@ Nexus VR Character Model, by TheNexusAvenger
 
 File: NexusVRCharacterModel/NexusVRCharacter/Character/Util.module.lua
 Author: TheNexusAvenger
-Date: March 25th 2018
+Date: March 27th 2018
 
 
 	
@@ -43,6 +43,7 @@ local Util = {}
 
 local CFnew = CFrame.new
 local Vector3huge = Vector3.new(math.huge,math.huge,math.huge)
+local RenderStepped = game:GetService("RunService").RenderStepped
 
 function Util:ScaleDescendants(Ins,Scale)
 	for _,Decendant in pairs(Ins:GetDescendants()) do
@@ -135,6 +136,7 @@ end
 function Util:CreateAnchoredPart(Part)
 	--This function is a bit hacky.
 	local AnchoredPartClass = {}
+	Part.Anchored = true
 	
 	local BodyPosition = Instance.new("BodyPosition")
 	BodyPosition.MaxForce = Vector3huge
@@ -149,7 +151,8 @@ function Util:CreateAnchoredPart(Part)
 	BodyGyro.Parent = Part
 	
 	local OffsetCF = CFrame.new()
-	function AnchoredPartClass:UpdateCFrame(CF)
+	local CF = CFrame.new()
+	local function UpdatePartPos()
 		BodyPosition.Position = CF.p
 		BodyGyro.CFrame = CF
 		
@@ -158,9 +161,20 @@ function Util:CreateAnchoredPart(Part)
 		OffsetCF = Part.CFrame:inverse() * TargetCF
 	end
 	
+	function AnchoredPartClass:UpdateCFrame(NewCF)
+		CF = NewCF
+		Part.Anchored = false
+		UpdatePartPos()
+	end
+	
+	local RenderSteppedEvent = RenderStepped:Connect(function()
+		UpdatePartPos()
+	end)
+	
 	function AnchoredPartClass:Disconnect()
 		BodyPosition:Destroy()
 		BodyGyro:Destroy()
+		RenderSteppedEvent:Disconnect()
 	end
 	
 	return AnchoredPartClass

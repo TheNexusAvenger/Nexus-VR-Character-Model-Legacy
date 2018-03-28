@@ -10,7 +10,7 @@ Nexus VR Character Model, by TheNexusAvenger
 
 File: NexusVRCharacterModel/NexusVRCharacter/Character/MainCharacterCreator.module.lua
 Author: TheNexusAvenger
-Date: March 11th 2018
+Date: March 28th 2018
 
 
 
@@ -63,6 +63,7 @@ local MessageCreator = require(UserInterface:WaitForChild("MessageCreator"))
 
 
 local function IsCharacterValid(Character)
+	Character:WaitForChild("Head",10)
 	local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 	local StartTime = tick()
 	while not Humanoid and Character.Parent and tick() - StartTime < 10 do 
@@ -70,7 +71,7 @@ local function IsCharacterValid(Character)
 		Humanoid = Character:FindFirstChildOfClass("Humanoid")
 	end
 	
-	if not Humanoid or not Character.Parent then
+	if not Humanoid then
 		return false
 	else
 		return Humanoid.RigType == Enum.HumanoidRigType.R15
@@ -123,6 +124,7 @@ function MainCharacterCreator:CreateLocalCharacter(CharacterModel)
 	
 	local WorldOffsetYOverride
 	local WorldOffsetYEnabledCount = 0
+	local RecenterOffset = Vector3.new()
 	function CharacterClass:SetYPlaneLockWorldOffset(Enabled)
 		if Enabled then
 			WorldOffsetYEnabledCount = WorldOffsetYEnabledCount + 1
@@ -164,24 +166,27 @@ function MainCharacterCreator:CreateLocalCharacter(CharacterModel)
 
 	local VRService = game:GetService("VRService")
 	local Head,LeftHand,RightHand = Enum.UserCFrame.Head,Enum.UserCFrame.LeftHand,Enum.UserCFrame.RightHand
+	local LeftHandDisconnectedOffset = CFrame.new(-1.5,0.2,0) * CFrame.Angles(-math.pi/2,0,0)
+	local RightHandDisconnectedOffset = CFrame.new(1.5,0.2,0) * CFrame.Angles(-math.pi/2,0,0)
 	function CharacterClass:UpdateUsingControllerInput()
-		local HeadsetCF = VRService:GetUserCFrame(Head)
+		local HeadsetCF = VRService:GetUserCFrame(Head) + RecenterOffset
 		
 		local LeftControllerCF,RightControllerCF
 		if VRService:GetUserCFrameEnabled(LeftHand) then
 			LeftControllerCF = VRService:GetUserCFrame(LeftHand) * CONTROLLER_OFFSET
 		else
-			local HandWorldCF = LowerTorso.CFrame * CFrame.new(-1.5,0.2,0)
+			local HandWorldCF = LowerTorso.CFrame * LeftHandDisconnectedOffset
 			local HandLocalSpace = PhysicalHead.CFrame:inverse() * HandWorldCF
 			LeftControllerCF = HeadsetCF * HandLocalSpace
 		end
 		if VRService:GetUserCFrameEnabled(RightHand) then
 			RightControllerCF = VRService:GetUserCFrame(RightHand) * CONTROLLER_OFFSET
 		else
-			local HandWorldCF = LowerTorso.CFrame * CFrame.new(1.5,0.2,0)
+			local HandWorldCF = LowerTorso.CFrame * RightHandDisconnectedOffset
 			local HandLocalSpace = PhysicalHead.CFrame:inverse() * HandWorldCF
 			RightControllerCF = HeadsetCF * HandLocalSpace
 		end
+		
 		CharacterClass:UpdatePositionsFromInput(HeadsetCF,LeftControllerCF,RightControllerCF)
 	end
 	

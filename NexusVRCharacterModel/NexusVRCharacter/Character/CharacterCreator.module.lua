@@ -10,7 +10,7 @@ Nexus VR Character Model, by TheNexusAvenger
 
 File: NexusVRCharacterModel/NexusVRCharacter/Character/CharacterCreator.module.lua
 Author: TheNexusAvenger
-Date: March 25th 2018
+Date: March 28th 2018
 
 
 
@@ -55,11 +55,14 @@ local HeadCreator = require(script.Parent:WaitForChild("HeadCreator"))
 local TorsoCreator = require(script.Parent:WaitForChild("TorsoCreator"))
 local AppendageCreator = require(script.Parent:WaitForChild("AppendageCreator"))
 local AppendageEndCreator = require(script.Parent:WaitForChild("AppendageEndCreator"))
+local Configuration = require(script.Parent.Parent:WaitForChild("Configuration"))
 
 local CFnew,CFAngles = CFrame.new,CFrame.Angles
 local V3new = Vector3.new
 local pi = math.pi
-	
+
+local PREVENT_LOCAL_ARM_DISCONNECTION = Configuration.CharacterCreator.PREVENT_LOCAL_ARM_DISCONNECTION
+local DISCONNECT_NON_LOCAL_ARMS = Configuration.CharacterCreator.DISCONNECT_NON_LOCAL_ARMS
 function CharacterCreator:CreateCharacter(Character,IsLocalCharacter)
 	local CharacterClass = {}
 	CharacterClass.CharacterModel = Character
@@ -96,7 +99,7 @@ function CharacterCreator:CreateCharacter(Character,IsLocalCharacter)
 			local Handle = Ins:FindFirstChild("Handle")
 			if Handle then
 				local AccessoryWeld = Handle:FindFirstChild("AccessoryWeld")
-				if AccessoryWeld then
+				if AccessoryWeld and AccessoryWeld.Part1.Anchored == true then
 					local C0,C1,Part1 = AccessoryWeld.C0,AccessoryWeld.C1,AccessoryWeld.Part1
 					if Part1 then
 						local Part1CF = Part1.CFrame
@@ -108,6 +111,7 @@ function CharacterCreator:CreateCharacter(Character,IsLocalCharacter)
 		end
 	end	
 	
+	local DisconnectArms = (IsLocalCharacter and not PREVENT_LOCAL_ARM_DISCONNECTION) or (not IsLocalCharacter and DISCONNECT_NON_LOCAL_ARMS)
 	function CharacterClass:UpdateRig(HeadCF,LeftControllerCF,RightControllerCF,LeftFootCF,RightFootCF)
 		if Disconnected then return false end
 		
@@ -117,16 +121,21 @@ function CharacterCreator:CreateCharacter(Character,IsLocalCharacter)
 		
 		local LeftHandWorldCF = TotalCharacterOffset * LeftControllerCF
 		local RightHandWorldCF = TotalCharacterOffset * RightControllerCF
-		LeftHand:UpdatePosition(LeftHandWorldCF)
-		RightHand:UpdatePosition(RightHandWorldCF)
+		local LeftShoulderCF = Torso:GetLeftShoulderCFrame() 
+		local RightShoulderCF = Torso:GetRightShoulderCFrame() 
+		if DisconnectArms then
+			LeftHand:UpdatePosition(LeftHandWorldCF)
+			RightHand:UpdatePosition(RightHandWorldCF)
+		else
+			LeftHand:UpdatePosition(LeftHandWorldCF,LeftShoulderCF.p,LeftArm:GetAppendageLength())
+			RightHand:UpdatePosition(RightHandWorldCF,RightShoulderCF.p,RightArm:GetAppendageLength())
+		end
 		
-		local LeftShoulderCF = Torso:GetLeftShoulderCFrame() * LeftArm:GetAttachmentPosition()
-		local RightShoulderCF = Torso:GetRightShoulderCFrame() * RightArm:GetAttachmentPosition()
 		local LeftHipCF = Torso:GetLeftHipCFrame()
 		local RightHipCF = Torso:GetRightHipCFrame()
 		
-		LeftArm:UpdatePositions(LeftShoulderCF,LeftHand:GetAttachmentPosition())
-		RightArm:UpdatePositions(RightShoulderCF,RightHand:GetAttachmentPosition())
+		LeftArm:UpdatePositions(LeftShoulderCF * LeftArm:GetAttachmentPosition(),LeftHand:GetAttachmentPosition())
+		RightArm:UpdatePositions(RightShoulderCF * RightArm:GetAttachmentPosition(),RightHand:GetAttachmentPosition())
 		
 		LeftFoot:UpdatePosition(LeftFootCF,LeftHipCF.p,LeftLeg:GetAppendageLength())
 		RightFoot:UpdatePosition(RightFootCF,RightHipCF.p,RightLeg:GetAppendageLength())
@@ -169,7 +178,7 @@ function CharacterCreator:CreateCharacter(Character,IsLocalCharacter)
 		local FootPlanter = require(script.Parent:WaitForChild("FootPlanter"))
 		local FootPlanterSolver = FootPlanter:CreateSolver(Character:WaitForChild("LowerTorso"))
 		local WorldX,WorldY,WorldZ = 0,0,0
-		local OffsetX,OffsetY,OffsetZ = 0,0,0	
+		local OffsetX,OffsetY,OffsetZ = 0,0,0
 		
 		function CharacterClass:UpdatePositions(HeadsetCF,LeftControllerCF,RightControllerCF)
 			if Disconnected then return end

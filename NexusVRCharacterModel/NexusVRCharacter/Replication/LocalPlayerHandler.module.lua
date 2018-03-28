@@ -10,7 +10,7 @@ Nexus VR Character Model, by TheNexusAvenger
 
 File: NexusVRCharacterModel/NexusVRCharacter/Replication/LocalPlayerHandler.module.lua
 Author: TheNexusAvenger
-Date: March 27th 2018
+Date: March 28th 2018
 
 
 
@@ -30,6 +30,8 @@ function LocalPlayerHandler:Initialize()
 	
 	local MainCharacterCreator = require(script.Parent:WaitForChild("MainCharacterCreator"))
 	local RemoteHandler = require(script.Parent:WaitForChild("RemoteHandler"))
+	local Configuration = require(script.Parent.Parent:WaitForChild("Configuration"))
+	local LOCAL_TRANSPARENCY_MODIFIER = Configuration.LocalPlayerHandler.LOCAL_TRANSPARENCY_MODIFIER
 
 	local LastCreatedCharacterModel
 	local function CreateCharacterFromLocalPlayer()
@@ -38,9 +40,11 @@ function LocalPlayerHandler:Initialize()
 		if CharacterModel and CharacterModel and CharacterModel ~= LastCreatedCharacterModel then
 			LastCreatedCharacterModel = CharacterModel
 			
-			local Character = MainCharacterCreator:CreateLocalCharacter(game.Workspace:WaitForChild("TheNexusAvenger"))
+			local Character = MainCharacterCreator:CreateLocalCharacter(CharacterModel)
 			if Character then
-				Character:SetLocalTransparencyModifier(0.5)
+				if not Configuration.CameraCreator.USE_THIRD_PERSON then
+					Character:SetLocalTransparencyModifier(LOCAL_TRANSPARENCY_MODIFIER)
+				end
 				
 				local RenderSteppedConnection
 				RenderSteppedConnection = RunService.RenderStepped:Connect(function()
@@ -62,15 +66,6 @@ function LocalPlayerHandler:Initialize()
 	VRService.Changed:Connect(StartVR)
 	StartVR()
 	
-	--This solves bug with HTC Vives not starting.
-	--Stops after 10 seconds.
-	local StartTime = tick()
-	spawn(function()
-		while not Started and StartTime - tick() < 10  do
-			StartVR()
-			wait(0.1)
-		end
-	end)
 	RemoteHandler:Initialize()
 end
 

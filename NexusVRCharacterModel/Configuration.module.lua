@@ -10,7 +10,7 @@ Nexus VR Character Model, by TheNexusAvenger
 
 File: NexusVRCharacterModel/Configuration.module.lua
 Author: TheNexusAvenger
-Date: March 28th 2018
+Date: March 29th 2018
 
 ]]
 
@@ -39,6 +39,9 @@ local MAINCHARACTERCREATOR_CHARACTER_SCALE_CALLIBRATION = 4.5/6
 
 --Offset of hand controllers before processing
 local MAINCHARACTERCREATOR_CONTROLLER_OFFSET = CFrame.Angles(-math.pi/4,0,0)
+
+--Offset of the character when recentered. Should be based off the height of the character and HEADCREATOR_HEADSET_BACK_OFFSET
+local MAINCHARACTERCREATOR_RECENTER_OFFSET = Vector3.new(0,4.5 - 0.25,0)
 
 
 --------------------------------------------------
@@ -116,7 +119,7 @@ local CHARACTERCREATOR_DISCONNECT_NON_LOCAL_ARMS = false
 --------------------------------------------------
 
 --Back offset of the camera and head from the headset
-local HEADCREATOR_HEADSET_BACK_OFFSET = 0.6
+local HEADCREATOR_HEADSET_BACK_OFFSET = 0.5
 
 --Downward offset of the camera and head from the headset
 local HEADCREATOR_HEADSET_DOWN_OFFSET = 0
@@ -277,6 +280,7 @@ return {
 		CONTROL_METHOD = MAINCHARACTERCREATOR_CONTROL_METHOD,
 		CHARACTER_SCALE_CALLIBRATION = MAINCHARACTERCREATOR_CHARACTER_SCALE_CALLIBRATION,
 		CONTROLLER_OFFSET = MAINCHARACTERCREATOR_CONTROLLER_OFFSET,
+		RECENTER_OFFSET = MAINCHARACTERCREATOR_RECENTER_OFFSET,
 	},
 	LocalPlayerHandler = {
 		LOCAL_TRANSPARENCY_MODIFIER = LOCALPLAYERHANDLER_LOCAL_TRANSPARENCY_MODIFIER,

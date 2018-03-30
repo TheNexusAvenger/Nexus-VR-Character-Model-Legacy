@@ -10,7 +10,7 @@ Nexus VR Character Model, by TheNexusAvenger
 
 File: NexusVRCharacterModel/NexusVRCharacter/Character/MainCharacterCreator.module.lua
 Author: TheNexusAvenger
-Date: March 28th 2018
+Date: March 29th 2018
 
 
 
@@ -47,6 +47,8 @@ local CONTROL_METHOD = Configuration.MainCharacterCreator.CONTROL_METHOD
 local INVALID_CHARACTER_WARNING = "Nexus VR Character Model requires R15"
 local CHARACTER_SCALE_CALLIBRATION = Configuration.MainCharacterCreator.CHARACTER_SCALE_CALLIBRATION
 local CONTROLLER_OFFSET = Configuration.MainCharacterCreator.CONTROLLER_OFFSET
+local RECENTER_OFFSET = Configuration.MainCharacterCreator.RECENTER_OFFSET
+local USE_THIRD_PERSON = Configuration.CameraCreator.USE_THIRD_PERSON
 
 local Character = script.Parent.Parent:WaitForChild("Character")
 local UserInterface = script.Parent.Parent:WaitForChild("UserInterface")
@@ -96,13 +98,14 @@ function MainCharacterCreator:CreateLocalCharacter(CharacterModel)
 	end
 	
 	local CharacterClass = CharacterCreator:CreateCharacter(CharacterModel,true)
+	local Humanoid = CharacterModel:FindFirstChildOfClass("Humanoid")
 	local LowerTorso = CharacterModel:WaitForChild("LowerTorso")
 	local PhysicalHead = CharacterModel:WaitForChild("Head")
 	
 	local Camera = CameraCreator:CreateCamera()
 	Camera:SetScale(CHARACTER_SCALE_CALLIBRATION)
 	
-	CharacterClass.Humanoid = CharacterModel:FindFirstChildOfClass("Humanoid")
+	CharacterClass.Humanoid = Humanoid
 	CharacterClass.Camera = Camera
 	
 	local Controller1,Controller2
@@ -124,7 +127,6 @@ function MainCharacterCreator:CreateLocalCharacter(CharacterModel)
 	
 	local WorldOffsetYOverride
 	local WorldOffsetYEnabledCount = 0
-	local RecenterOffset = Vector3.new()
 	function CharacterClass:SetYPlaneLockWorldOffset(Enabled)
 		if Enabled then
 			WorldOffsetYEnabledCount = WorldOffsetYEnabledCount + 1
@@ -147,7 +149,7 @@ function MainCharacterCreator:CreateLocalCharacter(CharacterModel)
 		local LeftControllerRelative = HeadsetCF:inverse() * LeftControllerCF
 		local RightControllerRelative = HeadsetCF:inverse() * RightControllerCF
 		
-		HeadsetCF = Camera:ScaleInput(HeadsetCF)
+		HeadsetCF = Camera:ScaleInput(HeadsetCF) + RECENTER_OFFSET
 		LeftControllerCF = HeadsetCF * LeftControllerRelative
 		RightControllerCF = HeadsetCF * RightControllerRelative
 		
@@ -169,7 +171,7 @@ function MainCharacterCreator:CreateLocalCharacter(CharacterModel)
 	local LeftHandDisconnectedOffset = CFrame.new(-1.5,0.2,0) * CFrame.Angles(-math.pi/2,0,0)
 	local RightHandDisconnectedOffset = CFrame.new(1.5,0.2,0) * CFrame.Angles(-math.pi/2,0,0)
 	function CharacterClass:UpdateUsingControllerInput()
-		local HeadsetCF = VRService:GetUserCFrame(Head) + RecenterOffset
+		local HeadsetCF = VRService:GetUserCFrame(Head)
 		
 		local LeftControllerCF,RightControllerCF
 		if VRService:GetUserCFrameEnabled(LeftHand) then
@@ -202,8 +204,25 @@ function MainCharacterCreator:CreateLocalCharacter(CharacterModel)
 	
 	
 	
+	local function HideHeadAccessories()
+		if not USE_THIRD_PERSON then
+			for _,Ins in pairs(Humanoid:GetAccessories()) do
+				local Handle = Ins:FindFirstChild("Handle")
+				if Handle then
+					local AccessoryWeld = Handle:FindFirstChild("AccessoryWeld")
+					if AccessoryWeld and AccessoryWeld.Part1.Anchored == true then
+						Handle.LocalTransparencyModifier = 1
+					end
+				end
+			end
+		end
+	end
+	HideHeadAccessories()
+	CharacterModel.ChildAdded:Connect(HideHeadAccessories)
+	
 	CharacterClass:SetWorldXZOffset(LowerTorso.Position.X,LowerTorso.Position.Z)
 	HeightSolver:SetNewContext(LowerTorso.Position - Vector3.new(0,2,0))
+	VRService:RecenterUserHeadCFrame()	
 	
 	return CharacterClass
 end
